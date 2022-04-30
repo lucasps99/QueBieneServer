@@ -11,8 +11,8 @@ app.get('/', (req, res) => {
 app.get('/game', (req, res) => {
   isgameready = false
   const userId = req.get("userId");
-  for(i=0;i< roomList.length(); i+=1) {
-    if(roomList.tinicio && (roomList.user == userId || roomList.user2 == userId)) {
+  for(i=0;i< roomList.length; i+=1) {
+    if(roomList[i].tinicio && (roomList[i].user1 == userId || roomList[i].user2 == userId)) {
       isgameready = true
     }
   }
