@@ -44,7 +44,7 @@ app.post('/game', (req, res) => {
         tinicio: undefined,
         result1: 0,
         result2: 0,
-        topos: []
+        bienes: []
       }
       roomList.push(room)
       printRoomList()
@@ -55,7 +55,7 @@ app.post('/game', (req, res) => {
     if (lastRoom.user2 == undefined) {
       lastRoom.user2 = userId;
       lastRoom.tinicio = Date.now();
-      lastRoom.topos = generateToposSequence();
+      lastRoom.bienes = generatebienesSequence();
       res.sendStatus(200);
       printRoomList()
       return;
@@ -67,7 +67,7 @@ app.post('/game', (req, res) => {
         tinicio: undefined,
         result1: 0,
         result2: 0,
-        topos: []
+        bienes: []
       }
       roomList.push(room);
       printRoomList();
@@ -91,10 +91,10 @@ app.post('/biene', (req, res) => {
   console.log(bieneId);
   for (let i = 0; i < roomList.length; i = i + 1) {
     if (roomList[i].user1 == userId || roomList[i].user2 == userId ) {
-      for (let j = 0; j < roomList[i].topos.length; j = j + 1) {
-        if (roomList[i].topos[j].bieneId == bieneId) {
-          if (roomList[i].topos[j].clicked == false) {
-            roomList[i].topos[j].clicked = true;
+      for (let j = 0; j < roomList[i].bienes.length; j = j + 1) {
+        if (roomList[i].bienes[j].bieneId == bieneId) {
+          if (roomList[i].bienes[j].clicked == false) {
+            roomList[i].bienes[j].clicked = true;
             if (roomList[i].user1 == userId) {
               roomList[i].result1 = roomList[i].result1 + 1;
               win = true;
@@ -142,29 +142,30 @@ app.get('/result', (req, res) => {
       }
     }
   }
+  printRoomList()
   res.json({'userPoints':userPoints, 'rivalPoints':rivalPoints});
 })
 
-function generateToposSequence() {
-  let topos = [];
+function generatebienesSequence() {
+  var bienes = [];
   for (let i = 0; i < 11; i = i+1) {
-    let topo = {
+    let tobienepo = {
       bieneId: i,
       delta: (i + 1)*5,
       position: 5,
       clicked: false
     }
-    topos.push(topo)
+    bienes.push(biene)
   }
-  return topos;
+  return bienes;
 }
 
 function printRoomList() {
   console.log('roomList --> ')
   for (let i = 0; i < roomList.length; i = i+1) {
-    console.log(roomList[i].user1 + ' ' + roomList[i].user2 + ' ' + roomList[i].tinicio + ' ' + roomList[i].result1 + ' ' + roomList[i].result2 + ' topos -->')
-    for (let j = 0; j < roomList[i].topos.length; j = j + 1) {
-      console.log(roomList[i].topos[j].bieneId + ' ' + roomList[i].topos[j].delta + ' ' + roomList[i].topos[j].position + ' ' + roomList[i].topos[j].clicked)
+    console.log(roomList[i].user1 + ' ' + roomList[i].user2 + ' ' + roomList[i].tinicio + ' ' + roomList[i].result1 + ' ' + roomList[i].result2 + ' bienes -->')
+    for (let j = 0; j < roomList[i].bienes.length; j = j + 1) {
+      console.log(roomList[i].bienes[j].bieneId + ' ' + roomList[i].bienes[j].delta + ' ' + roomList[i].bienes[j].position + ' ' + roomList[i].bienes[j].clicked)
     }
   }
 }
