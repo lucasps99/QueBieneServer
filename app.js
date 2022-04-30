@@ -76,6 +76,7 @@ app.post('/biene', (req, res) => {
   if (userId == undefined) {
     res.sendStatus(400);
   }
+  var win = false;
   const bieneId = req.body.bieneId;
   console.log(bieneId);
   for (let i = 0; i < roomList.length; i = i + 1) {
@@ -86,9 +87,11 @@ app.post('/biene', (req, res) => {
             roomList[i].topos[j].clicked = true;
             if (roomList[i].user1 == userId) {
               roomList[i].result1 = roomList[i].result1 + 1;
+              win = true;
             }
             else {
               roomList[i].result2 = roomList[i].result2 + 1;
+              win = true;
             }
             break;
           }
@@ -99,8 +102,37 @@ app.post('/biene', (req, res) => {
     break;
   }
   printRoomList();
-  res.sendStatus(200);
+  res.json({'win':win});
   
+})
+
+app.get('/result', (req, res) => {
+  const userId = req.get("userId");
+  let userPoints = 0;
+  let rivalPoints = 0;
+  for (i=0;i< roomList.length; i+=1) {
+    if (roomList[i].user1 == userId) {
+      userPoints = roomList[i].result1;
+      rivalPoints = roomList[i].result2;
+      if (roomList[i].user2 == undefined) {
+        roomList = roomList.splice(i,1);
+      }
+      else {
+        roomList[i].user1 = undefined
+      }
+    }
+    else if(roomList[i].user2 == userId) {
+      userPoints = roomList[i].result2;
+      rivalPoints = roomList[i].result1;
+      if (roomList[i].user1 == undefined) {
+        roomList = roomList.splice(i,1);
+      }
+      else {
+        roomList[i].user2 = undefined
+      }
+    }
+  }
+  res.json({'userPoints':userPoints, 'rivalPoints':rivalPoints});
 })
 
 function generateToposSequence() {
@@ -126,6 +158,7 @@ function printRoomList() {
     }
   }
 }
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
