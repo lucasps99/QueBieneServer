@@ -15,8 +15,8 @@ app.post('/game', (req, res) => {
   }
   else {
     waitingList.push(userId);
-    console.log('User ' + userId + ' added to userQueue')
-    console.log(waitingList)
+    //console.log('User ' + userId + ' added to userQueue')
+    //console.log(waitingList)
     res.sendStatus(200);
   }
   
