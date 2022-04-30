@@ -200,10 +200,10 @@ app.get('/result', (req, res) => {
 
 function generatebienesSequence() {
   var bienes = [];
-  for (let i = 0; i < 11; i = i+1) {
+  for (let i = 0; i < 19; i = i+1) {
     let biene = {
       bieneId: i,
-      delta: (i + 1)*5,
+      delta: (i + 1)*3,
       position: generateRandomInt(1,9),
       clicked: false
     }
