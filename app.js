@@ -20,6 +20,7 @@ app.post('/game', (req, res) => {
   const userId = req.get("userId");
   if (userId == undefined) {
     res.sendStatus(400);
+    return;
   }
   const roomId = idRoom;
 
@@ -33,7 +34,7 @@ app.post('/game', (req, res) => {
       bienes: []
     }
     roomList.set(roomList.size,room)
-    res.json({'roomId': roomList.size});
+    res.json({'roomId': roomList.size-1});
     return;
   }
 
@@ -56,7 +57,7 @@ app.post('/game', (req, res) => {
   }
   idRoom += 1;
   roomList.set(roomList.size,room);
-  res.json({'roomId': roomList.size});
+  res.json({'roomId': roomList.size-1});
   return;
 
 })
@@ -65,9 +66,11 @@ function getGameInfo(req,res,wantBienes) {
   const roomId = req.get("roomId");
   if (roomId == undefined) {
     res.sendStatus(400);
+    return;
   }
   if((parseInt(roomId) > roomList.size) || (roomList.size == 0)) {
     res.sendStatus(400);
+    return;
   }
   isgameready = false
   let gameInfo;
@@ -95,10 +98,12 @@ app.post('/biene', (req, res) => {
   const roomId = req.get("roomId");
   if (roomId == undefined) {
     res.sendStatus(400);
+    return;
   }
   const userId = req.get("userId");
   if (userId == undefined) {
     res.sendStatus(400);
+    return;
   }
   const room = roomList.get(parseInt(roomId));
 
@@ -130,10 +135,12 @@ app.get('/result', (req, res) => {
   const roomId = req.get("roomId");
   if (roomId == undefined) {
     res.sendStatus(400);
+    return;
   }
   const userId = req.get("userId");
   if (userId == undefined) {
     res.sendStatus(400);
+    return;
   }
   getGamePoints(userId,roomId,true,res);
 })
@@ -142,10 +149,12 @@ app.get('/game/state', (req, res) => {
   const roomId = req.get("roomId");
   if (roomId == undefined) {
     res.sendStatus(400);
+    return;
   }
   const userId = req.get("userId");
   if (userId == undefined) {
     res.sendStatus(400);
+    return;
   }
   getGamePoints(userId,roomId,false,res);
 })
