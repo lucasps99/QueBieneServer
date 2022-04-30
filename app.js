@@ -2,6 +2,8 @@ const express = require('express')
 const app = express()
 const port = 3000
 
+app.use(express.json());
+
 var roomList = [];
 
 app.get('/', (req, res) => {
@@ -69,13 +71,46 @@ app.post('/game', (req, res) => {
   
 })
 
+app.post('/biene', (req, res) => {
+  const userId = req.get("userId");
+  if (userId == undefined) {
+    res.sendStatus(400);
+  }
+  const bieneId = req.body.bieneId;
+  console.log(bieneId);
+  for (let i = 0; i < roomList.length; i = i + 1) {
+    if (roomList[i].user1 == userId || roomList[i].user2 == userId ) {
+      for (let j = 0; j < roomList[i].topos.length; j = j + 1) {
+        if (roomList[i].topos[j].bieneId == bieneId) {
+          if (roomList[i].topos[j].clicked == false) {
+            roomList[i].topos[j].clicked = true;
+            if (roomList[i].user1 == userId) {
+              roomList[i].result1 = roomList[i].result1 + 1;
+            }
+            else {
+              roomList[i].result2 = roomList[i].result2 + 1;
+            }
+            break;
+          }
+        }
+        
+      }
+    }
+    break;
+  }
+  printRoomList();
+  res.sendStatus(200);
+  
+})
+
 function generateToposSequence() {
   var topos = [];
   for (let i = 0; i < 11; i = i+1) {
     let topo = {
-      topoId: i,
-      delta: i*5,
-      position: 5
+      bieneId: i,
+      delta: (i + 1)*5,
+      position: 5,
+      clicked: false
     }
     topos.push(topo)
   }
@@ -85,7 +120,10 @@ function generateToposSequence() {
 function printRoomList() {
   console.log('roomList --> ')
   for (let i = 0; i < roomList.length; i = i+1) {
-    console.log(roomList[i].user1 + ' ' + roomList[i].user2 + ' ' + roomList[i].tinicio + ' ' + roomList[i].result1 + ' ' + roomList[i].result2 + ' ' + roomList[i].topos + ' ')
+    console.log(roomList[i].user1 + ' ' + roomList[i].user2 + ' ' + roomList[i].tinicio + ' ' + roomList[i].result1 + ' ' + roomList[i].result2 + ' topos -->')
+    for (let j = 0; j < roomList[i].topos.length; j = j + 1) {
+      console.log(roomList[i].topos[j].bieneId + ' ' + roomList[i].topos[j].delta + ' ' + roomList[i].topos[j].position + ' ' + roomList[i].topos[j].clicked)
+    }
   }
 }
 
