@@ -109,7 +109,6 @@ app.post('/biene', (req, res) => {
 
   let win = false;
   const bieneId = req.body.bieneId;
-  console.log(bieneId);
 
   for (let j = 0; j < room.bienes.length; j = j + 1) {
     if (room.bienes[j].bieneId != bieneId) {
@@ -218,5 +217,5 @@ function generateRandomInt(min,max){
 
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
+  console.log(`Que Biene Server listening on port: ${port}`)
 })
