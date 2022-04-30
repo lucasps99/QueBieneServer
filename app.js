@@ -54,7 +54,7 @@ app.post('/game', (req, res) => {
       bienes: []
     }
     roomList.set(roomList.size,room)
-    res.sendStatus(200);
+    res.json({'roomId': roomList.size});
     return;
   }
 
@@ -64,7 +64,7 @@ app.post('/game', (req, res) => {
     lastRoom.tinicio = Date.now();
     lastRoom.bienes = generatebienesSequence();
     roomList.set(roomList.size-1,lastRoom);
-    res.sendStatus(200);
+    res.json({'roomId': roomList.size-1});
     return;
   }
   let room = {
@@ -77,7 +77,7 @@ app.post('/game', (req, res) => {
   }
   idRoom += 1;
   roomList.set(roomList.size,room);
-  res.sendStatus(200);
+  res.json({'roomId': roomList.size});
   return;
 
 })
