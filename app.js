@@ -4,7 +4,9 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
-var roomList = [];
+let roomList = new Map();
+
+let idRoom = 0;
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
@@ -18,77 +20,73 @@ app.post('/game', (req, res) => {
   const userId = req.get("userId");
   if (userId == undefined) {
     res.sendStatus(400);
+    return;
   }
-  else {
-    if (roomList.length == 0) {
-      let room = {
-        user1: userId,
-        user2: undefined,
-        tinicio: undefined,
-        result1: 0,
-        result2: 0,
-        bienes: []
-      }
-      roomList.push(room)
-      printRoomList()
-      res.sendStatus(200);
-      return;
+  const roomId = idRoom;
+
+  if (roomList.size == 0) {
+    let room = {
+      user1: userId,
+      user2: null,
+      tinicio: undefined,
+      result1: 0,
+      result2: 0,
+      bienes: []
     }
-    let lastRoom = roomList[roomList.length-1]
-    if (lastRoom.user2 == undefined) {
-      lastRoom.user2 = userId;
-      lastRoom.tinicio = Date.now();
-      lastRoom.bienes = generatebienesSequence();
-      res.sendStatus(200);
-      printRoomList()
-      return;
-    }
-    else {
-      let room = {
-        user1: userId,
-        user2: undefined,
-        tinicio: undefined,
-        result1: 0,
-        result2: 0,
-        bienes: []
-      }
-      roomList.push(room);
-      printRoomList();
-      res.sendStatus(200);
-      return;
-    }
-    //console.log('User ' + userId + ' added to userQueue')
-    //console.log(waitingList)
-    
+    roomList.set(roomList.size,room)
+    res.json({'roomId': roomList.size-1});
+    return;
   }
-  
+
+  let lastRoom = roomList.get(roomList.size-1);
+  if (!lastRoom.user2) {
+    lastRoom.user2 = userId;
+    lastRoom.tinicio = Date.now();
+    lastRoom.bienes = generatebienesSequence();
+    roomList.set(roomList.size-1,lastRoom);
+    res.json({'roomId': roomList.size-1});
+    return;
+  }
+  let room = {
+    user1: userId,
+    user2: undefined,
+    tinicio: undefined,
+    result1: 0,
+    result2: 0,
+    bienes: []
+  }
+  idRoom += 1;
+  roomList.set(roomList.size,room);
+  res.json({'roomId': roomList.size-1});
+  return;
+
 })
 
 function getGameInfo(req,res,wantBienes) {
-  const userId = req.get("userId");
-  if (userId == undefined) {
+  const roomId = req.get("roomId");
+  if (roomId == undefined) {
     res.sendStatus(400);
+    return;
+  }
+  if((parseInt(roomId) > roomList.size) || (roomList.size == 0)) {
+    res.sendStatus(400);
+    return;
   }
   isgameready = false
   let gameInfo;
-  for(i=0;i< roomList.length; i+=1) {
-    if(roomList[i].tinicio && (roomList[i].user1 == userId || roomList[i].user2 == userId)) {
-      if (!wantBienes) {
-        gameInfo = {
-          isgameready: true,
-          timestamp: roomList[i].tinicio,
-          bienes: roomList[i].bienes
-        }
-        res.json({'isgameready':gameInfo.isgameready, 'timestamp': gameInfo.timestamp});
+  const room = roomList.get(parseInt(roomId));
+  if(room.tinicio) {
+    if (!wantBienes) {
+      gameInfo = {
+        isgameready: true,
+        timestamp: room.tinicio,
+        bienes: room.bienes
       }
-      res.json({'bienes': roomList[i].bienes});
+      res.json({'isgameready':gameInfo.isgameready, 'timestamp': gameInfo.timestamp});
       return;
     }
   }
-  if (!wantBienes) {
-    res.json({'isgameready': isgameready, 'timestamp': ''});
-  }
-  res.json({'bienes': ''});
+  res.json({'bienes': room.bienes})
 
 }
 
@@ -97,78 +95,103 @@ app.get('/biene', (req, res) => {
 })
 
 app.post('/biene', (req, res) => {
+  const roomId = req.get("roomId");
+  if (roomId == undefined) {
+    res.sendStatus(400);
+    return;
+  }
   const userId = req.get("userId");
   if (userId == undefined) {
     res.sendStatus(400);
+    return;
   }
-  var win = false;
+  const room = roomList.get(parseInt(roomId));
+
+  let win = false;
   const bieneId = req.body.bieneId;
   console.log(bieneId);
-  for (let i = 0; i < roomList.length; i = i + 1) {
-    if (roomList[i].user1 == userId || roomList[i].user2 == userId ) {
-      for (let j = 0; j < roomList[i].bienes.length; j = j + 1) {
-        if (roomList[i].bienes[j].bieneId == bieneId) {
-          if (roomList[i].bienes[j].clicked == false) {
-            roomList[i].bienes[j].clicked = true;
-            if (roomList[i].user1 == userId) {
-              roomList[i].result1 = roomList[i].result1 + 1;
-              win = true;
-            }
-            else {
-              roomList[i].result2 = roomList[i].result2 + 1;
-              win = true;
-            }
-            break;
-          }
-        }
-        
+
+  for (let j = 0; j < room.bienes.length; j = j + 1) {
+    if (room.bienes[j].bieneId != bieneId) {
+      continue;
+    }
+    if (room.bienes[j].clicked == false) {
+      room.bienes[j].clicked = true;
+      if (room.user1 == userId) {
+        room.result1 = room.result1 + 1;
+        win = true;
+      }
+      else {
+        room.result2 = room.result2 + 1;
+        win = true;
+      }
+      break;
       }
     }
-    break;
-  }
-  printRoomList();
   res.json({'win':win});
-  
+})
+
+app.get('/result', (req, res) => {
+  const roomId = req.get("roomId");
+  if (roomId == undefined) {
+    res.sendStatus(400);
+    return;
+  }
+  const userId = req.get("userId");
+  if (userId == undefined) {
+    res.sendStatus(400);
+    return;
+  }
+  getGamePoints(userId,roomId,true,res);
 })
 
 app.get('/game/state', (req, res) => {
+  const roomId = req.get("roomId");
+  if (roomId == undefined) {
+    res.sendStatus(400);
+    return;
+  }
   const userId = req.get("userId");
-  getGamePoints(userId,false,res);
+  if (userId == undefined) {
+    res.sendStatus(400);
+    return;
+  }
+  getGamePoints(userId,roomId,false,res);
 })
 
-function getGamePoints(userId,isGameEnded,res) {
+function getGamePoints(userId,roomId,isGameEnded,res) {
   
   let userPoints = 0;
   let rivalPoints = 0;
-  for (i=0;i< roomList.length; i+=1) {
-    if (roomList[i].user1 == userId) {
-      userPoints = roomList[i].result1;
-      rivalPoints = roomList[i].result2;
-      if (isGameEnded) {
-        if (roomList[i].user2 == undefined) {
-          roomList = roomList.splice(i,1);
-        }
-        else {
-          roomList[i].user1 = undefined
-        }
+  const room = roomList.get(parseInt(roomId));
+  if (room.user1 == userId) {
+    userPoints = room.result1;
+    rivalPoints = room.result2;
+    if(isGameEnded) {
+      if (room.user2 == undefined) {
+        roomList.delete(parseInt(roomId))
       }
-    }
-    else if(roomList[i].user2 == userId) {
-      userPoints = roomList[i].result2;
-      rivalPoints = roomList[i].result1;
-      if (isGameEnded) {
-        if (roomList[i].user1 == undefined) {
-          roomList = roomList.splice(i,1);
-        }
-        else {
-          roomList[i].user2 = undefined
-        }
+      else {
+        room.user1 = undefined
       }
     }
   }
-  printRoomList()
+  else if(room.user2 == userId) {
+    userPoints = room.result2;
+    rivalPoints = room.result1;
+    if(isGameEnded) {
+
+      if (room.user1 == undefined) {
+        roomList.delete(parseInt(roomId))
+      }
+      else {
+        room.user2 = undefined
+      }
+    }
+  }
   res.json({'userPoints':userPoints, 'rivalPoints':rivalPoints});
 }
+
 
 app.get('/result', (req, res) => {
   const userId = req.get("userId");
@@ -191,16 +214,6 @@ function generatebienesSequence() {
 
 function generateRandomInt(min,max){
   return Math.floor((Math.random() * (max-min)) +min);
-}
-
-function printRoomList() {
-  console.log('roomList --> ')
-  for (let i = 0; i < roomList.length; i = i+1) {
-    console.log(roomList[i].user1 + ' ' + roomList[i].user2 + ' ' + roomList[i].tinicio + ' ' + roomList[i].result1 + ' ' + roomList[i].result2 + ' bienes -->')
-    for (let j = 0; j < roomList[i].bienes.length; j = j + 1) {
-      console.log(roomList[i].bienes[j].bieneId + ' ' + roomList[i].bienes[j].delta + ' ' + roomList[i].bienes[j].position + ' ' + roomList[i].bienes[j].clicked)
-    }
-  }
 }
 
 
