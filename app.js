@@ -166,12 +166,16 @@ function generatebienesSequence() {
     let biene = {
       bieneId: i,
       delta: (i + 1)*5,
-      position: 5,
+      position: generateRandomInt(1,9),
       clicked: false
     }
     bienes.push(biene)
   }
   return bienes;
+}
+
+function generateRandomInt(min,max){
+  return Math.floor((Math.random() * (max-min)) +min);
 }
 
 function printRoomList() {
