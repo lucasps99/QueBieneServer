@@ -97,7 +97,7 @@ app.get('/biene', (req, res) => {
   getGameInfo(req,res,true);
 })
 
-app.post('/biene', (req, res) => {
+app.get('/biene/press', (req, res) => {
   const roomId = req.get("roomId");
   if (roomId == undefined) {
     res.sendStatus(400);
@@ -108,10 +108,14 @@ app.post('/biene', (req, res) => {
     res.sendStatus(400);
     return;
   }
+  const bieneId = req.get("bieneId");
+  if (bieneId == undefined) {
+    res.sendStatus(400);
+    return;
+  }
   const room = roomList.get(parseInt(roomId));
 
   let win = false;
-  const bieneId = req.body.bieneId;
 
   for (let j = 0; j < room.bienes.length; j = j + 1) {
     if (room.bienes[j].bieneId != bieneId) {
