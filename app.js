@@ -4,8 +4,6 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// var roomList = [];
-
 let roomList = new Map();
 
 let idRoom = 0;
@@ -15,26 +13,7 @@ app.get('/', (req, res) => {
 })
 
 app.get('/game', (req, res) => {
-  const roomId = req.get("roomId");
-  if (roomId == undefined) {
-    res.sendStatus(400);
-  }
-  if((parseInt(roomId) > roomList.size) || (roomList.size == 0)) {
-    res.sendStatus(400);
-  }
-  isgameready = false
-  let gameInfo;
-  const room = roomList.get(parseInt(roomId));
-  if(room.tinicio) {
-    gameInfo = {
-      isgameready: true,
-      timestamp: room.tinicio,
-      bienes: room.bienes
-    }
-    res.json({'isgameready':gameInfo.isgameready, 'timestamp': gameInfo.timestamp, 'bienes': gameInfo.bienes});
-    return;
-  }
-  res.json({'isgameready': isgameready, 'timestamp': '', 'topos': ''});
+  getGameInfo(req,res,false);
 })
 
 app.post('/game', (req, res) => {
@@ -82,6 +61,36 @@ app.post('/game', (req, res) => {
 
 })
 
+function getGameInfo(req,res,wantBienes) {
+  const roomId = req.get("roomId");
+  if (roomId == undefined) {
+    res.sendStatus(400);
+  }
+  if((parseInt(roomId) > roomList.size) || (roomList.size == 0)) {
+    res.sendStatus(400);
+  }
+  isgameready = false
+  let gameInfo;
+  const room = roomList.get(parseInt(roomId));
+  if(room.tinicio) {
+    if (!wantBienes) {
+      gameInfo = {
+        isgameready: true,
+        timestamp: room.tinicio,
+        bienes: room.bienes
+      }
+      res.json({'isgameready':gameInfo.isgameready, 'timestamp': gameInfo.timestamp});
+      return;
+    }
+  }
+  res.json({'bienes': room.bienes})
+
+}
+
+app.get('/biene', (req, res) => {
+  getGameInfo(req,res,true);
+})
+
 app.post('/biene', (req, res) => {
   const roomId = req.get("roomId");
   if (roomId == undefined) {
@@ -126,30 +135,58 @@ app.get('/result', (req, res) => {
   if (userId == undefined) {
     res.sendStatus(400);
   }
+  getGamePoints(userId,roomId,true,res);
+})
+
+app.get('/game/state', (req, res) => {
+  const roomId = req.get("roomId");
+  if (roomId == undefined) {
+    res.sendStatus(400);
+  }
+  const userId = req.get("userId");
+  if (userId == undefined) {
+    res.sendStatus(400);
+  }
+  getGamePoints(userId,roomId,false,res);
+})
+
+function getGamePoints(userId,roomId,isGameEnded,res) {
+  
   let userPoints = 0;
   let rivalPoints = 0;
   const room = roomList.get(parseInt(roomId));
   if (room.user1 == userId) {
     userPoints = room.result1;
     rivalPoints = room.result2;
-    if (room.user2 == undefined) {
-      roomList.delete(parseInt(roomId))
-    }
-    else {
-      room.user1 = undefined
+    if(isGameEnded) {
+      if (room.user2 == undefined) {
+        roomList.delete(parseInt(roomId))
+      }
+      else {
+        room.user1 = undefined
+      }
     }
   }
   else if(room.user2 == userId) {
     userPoints = room.result2;
     rivalPoints = room.result1;
-    if (room.user1 == undefined) {
-      roomList.delete(parseInt(roomId))
-    }
-    else {
-      room.user2 = undefined
+    if(isGameEnded) {
+
+      if (room.user1 == undefined) {
+        roomList.delete(parseInt(roomId))
+      }
+      else {
+        room.user2 = undefined
+      }
     }
   }
   res.json({'userPoints':userPoints, 'rivalPoints':rivalPoints});
+}
+
+
+app.get('/result', (req, res) => {
+  const userId = req.get("userId");
+  getGamePoints(userId,true,res);
 })
 
 function generatebienesSequence() {
@@ -158,12 +195,16 @@ function generatebienesSequence() {
     let biene = {
       bieneId: i,
       delta: (i + 1)*5,
-      position: 5,
+      position: generateRandomInt(1,9),
       clicked: false
     }
     bienes.push(biene)
   }
   return bienes;
+}
+
+function generateRandomInt(min,max){
+  return Math.floor((Math.random() * (max-min)) +min);
 }
 
 
