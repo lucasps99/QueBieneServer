@@ -11,14 +11,24 @@ app.get('/', (req, res) => {
 })
 
 app.get('/game', (req, res) => {
-  isgameready = false
   const userId = req.get("userId");
+  if (userId == undefined) {
+    res.sendStatus(400);
+  }
+  isgameready = false
+  let gameInfo;
   for(i=0;i< roomList.length; i+=1) {
     if(roomList[i].tinicio && (roomList[i].user1 == userId || roomList[i].user2 == userId)) {
-      isgameready = true
+      gameInfo = {
+        isgameready: true,
+        timestamp: roomList[i].tinicio,
+        topos: roomList[i].topos
+      }
+      res.json({'isgameready':gameInfo.isgameready, 'timestamp': gameInfo.timestamp, 'topos': gameInfo.topos});
+      return;
     }
   }
-  res.json({'isgameready':isgameready});
+  res.json({'isgameready': isgameready, 'timestamp': '', 'topos': ''});
 })
 
 app.post('/game', (req, res) => {
@@ -28,7 +38,7 @@ app.post('/game', (req, res) => {
   }
   else {
     if (roomList.length == 0) {
-      var room = {
+      let room = {
         user1: userId,
         user2: undefined,
         tinicio: undefined,
@@ -41,7 +51,7 @@ app.post('/game', (req, res) => {
       res.sendStatus(200);
       return;
     }
-    var lastRoom = roomList[roomList.length-1]
+    let lastRoom = roomList[roomList.length-1]
     if (lastRoom.user2 == undefined) {
       lastRoom.user2 = userId;
       lastRoom.tinicio = Date.now();
@@ -51,7 +61,7 @@ app.post('/game', (req, res) => {
       return;
     }
     else {
-      var room = {
+      let room = {
         user1: userId,
         user2: undefined,
         tinicio: undefined,
