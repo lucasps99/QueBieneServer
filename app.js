@@ -11,24 +11,7 @@ app.get('/', (req, res) => {
 })
 
 app.get('/game', (req, res) => {
-  const userId = req.get("userId");
-  if (userId == undefined) {
-    res.sendStatus(400);
-  }
-  isgameready = false
-  let gameInfo;
-  for(i=0;i< roomList.length; i+=1) {
-    if(roomList[i].tinicio && (roomList[i].user1 == userId || roomList[i].user2 == userId)) {
-      gameInfo = {
-        isgameready: true,
-        timestamp: roomList[i].tinicio,
-        bienes: roomList[i].bienes
-      }
-      res.json({'isgameready':gameInfo.isgameready, 'timestamp': gameInfo.timestamp, 'bienes': gameInfo.bienes});
-      return;
-    }
-  }
-  res.json({'isgameready': isgameready, 'timestamp': '', 'bienes': ''});
+  getGameInfo(req,res,false);
 })
 
 app.post('/game', (req, res) => {
@@ -79,6 +62,38 @@ app.post('/game', (req, res) => {
     
   }
   
+})
+
+function getGameInfo(req,res,wantBienes) {
+  const userId = req.get("userId");
+  if (userId == undefined) {
+    res.sendStatus(400);
+  }
+  isgameready = false
+  let gameInfo;
+  for(i=0;i< roomList.length; i+=1) {
+    if(roomList[i].tinicio && (roomList[i].user1 == userId || roomList[i].user2 == userId)) {
+      if (!wantBienes) {
+        gameInfo = {
+          isgameready: true,
+          timestamp: roomList[i].tinicio,
+          bienes: roomList[i].bienes
+        }
+        res.json({'isgameready':gameInfo.isgameready, 'timestamp': gameInfo.timestamp});
+      }
+      res.json({'bienes': roomList[i].bienes});
+      return;
+    }
+  }
+  if (!wantBienes) {
+    res.json({'isgameready': isgameready, 'timestamp': ''});
+  }
+  res.json({'bienes': ''});
+
+}
+
+app.get('/biene', (req, res) => {
+  getGameInfo(req,res,true);
 })
 
 app.post('/biene', (req, res) => {
