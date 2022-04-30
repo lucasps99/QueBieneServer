@@ -4,29 +4,35 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
-var roomList = [];
+// var roomList = [];
+
+let roomList = new Map();
+
+let idRoom = 0;
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
 })
 
 app.get('/game', (req, res) => {
-  const userId = req.get("userId");
-  if (userId == undefined) {
+  const roomId = req.get("roomId");
+  if (roomId == undefined) {
+    res.sendStatus(400);
+  }
+  if((parseInt(roomId) > roomList.size) || (roomList.size == 0)) {
     res.sendStatus(400);
   }
   isgameready = false
   let gameInfo;
-  for(i=0;i< roomList.length; i+=1) {
-    if(roomList[i].tinicio && (roomList[i].user1 == userId || roomList[i].user2 == userId)) {
-      gameInfo = {
-        isgameready: true,
-        timestamp: roomList[i].tinicio,
-        topos: roomList[i].topos
-      }
-      res.json({'isgameready':gameInfo.isgameready, 'timestamp': gameInfo.timestamp, 'topos': gameInfo.topos});
-      return;
+  const room = roomList.get(parseInt(roomId));
+  if(room.tinicio) {
+    gameInfo = {
+      isgameready: true,
+      timestamp: room.tinicio,
+      bienes: room.bienes
     }
+    res.json({'isgameready':gameInfo.isgameready, 'timestamp': gameInfo.timestamp, 'bienes': gameInfo.bienes});
+    return;
   }
   res.json({'isgameready': isgameready, 'timestamp': '', 'topos': ''});
 })
@@ -36,120 +42,120 @@ app.post('/game', (req, res) => {
   if (userId == undefined) {
     res.sendStatus(400);
   }
-  else {
-    if (roomList.length == 0) {
-      let room = {
-        user1: userId,
-        user2: undefined,
-        tinicio: undefined,
-        result1: 0,
-        result2: 0,
-        bienes: []
-      }
-      roomList.push(room)
-      printRoomList()
-      res.sendStatus(200);
-      return;
+  const roomId = idRoom;
+
+  if (roomList.size == 0) {
+    let room = {
+      user1: userId,
+      user2: null,
+      tinicio: undefined,
+      result1: 0,
+      result2: 0,
+      bienes: []
     }
-    let lastRoom = roomList[roomList.length-1]
-    if (lastRoom.user2 == undefined) {
-      lastRoom.user2 = userId;
-      lastRoom.tinicio = Date.now();
-      lastRoom.bienes = generatebienesSequence();
-      res.sendStatus(200);
-      printRoomList()
-      return;
-    }
-    else {
-      let room = {
-        user1: userId,
-        user2: undefined,
-        tinicio: undefined,
-        result1: 0,
-        result2: 0,
-        bienes: []
-      }
-      roomList.push(room);
-      printRoomList();
-      res.sendStatus(200);
-      return;
-    }
-    //console.log('User ' + userId + ' added to userQueue')
-    //console.log(waitingList)
-    
+    roomList.set(roomList.size,room)
+    res.sendStatus(200);
+    return;
   }
-  
+
+  let lastRoom = roomList.get(roomList.size-1);
+  if (!lastRoom.user2) {
+    lastRoom.user2 = userId;
+    lastRoom.tinicio = Date.now();
+    lastRoom.bienes = generatebienesSequence();
+    roomList.set(roomList.size-1,lastRoom);
+    res.sendStatus(200);
+    return;
+  }
+  let room = {
+    user1: userId,
+    user2: undefined,
+    tinicio: undefined,
+    result1: 0,
+    result2: 0,
+    bienes: []
+  }
+  idRoom += 1;
+  roomList.set(roomList.size,room);
+  res.sendStatus(200);
+  return;
+
 })
 
 app.post('/biene', (req, res) => {
+  const roomId = req.get("roomId");
+  if (roomId == undefined) {
+    res.sendStatus(400);
+  }
   const userId = req.get("userId");
   if (userId == undefined) {
     res.sendStatus(400);
   }
-  var win = false;
+  const room = roomList.get(parseInt(roomId));
+
+  let win = false;
   const bieneId = req.body.bieneId;
   console.log(bieneId);
-  for (let i = 0; i < roomList.length; i = i + 1) {
-    if (roomList[i].user1 == userId || roomList[i].user2 == userId ) {
-      for (let j = 0; j < roomList[i].bienes.length; j = j + 1) {
-        if (roomList[i].bienes[j].bieneId == bieneId) {
-          if (roomList[i].bienes[j].clicked == false) {
-            roomList[i].bienes[j].clicked = true;
-            if (roomList[i].user1 == userId) {
-              roomList[i].result1 = roomList[i].result1 + 1;
-              win = true;
-            }
-            else {
-              roomList[i].result2 = roomList[i].result2 + 1;
-              win = true;
-            }
-            break;
-          }
-        }
-        
+
+  for (let j = 0; j < room.bienes.length; j = j + 1) {
+    if (room.bienes[j].bieneId != bieneId) {
+      continue;
+    }
+    if (room.bienes[j].clicked == false) {
+      room.bienes[j].clicked = true;
+      if (room.user1 == userId) {
+        room.result1 = room.result1 + 1;
+        win = true;
+      }
+      else {
+        room.result2 = room.result2 + 1;
+        win = true;
+      }
+      break;
       }
     }
-    break;
-  }
-  printRoomList();
   res.json({'win':win});
-  
 })
 
 app.get('/result', (req, res) => {
+  const roomId = req.get("roomId");
+  if (roomId == undefined) {
+    res.sendStatus(400);
+  }
   const userId = req.get("userId");
+  if (userId == undefined) {
+    res.sendStatus(400);
+  }
   let userPoints = 0;
   let rivalPoints = 0;
-  for (i=0;i< roomList.length; i+=1) {
-    if (roomList[i].user1 == userId) {
-      userPoints = roomList[i].result1;
-      rivalPoints = roomList[i].result2;
-      if (roomList[i].user2 == undefined) {
-        roomList = roomList.splice(i,1);
-      }
-      else {
-        roomList[i].user1 = undefined
-      }
+  const room = roomList.get(parseInt(roomId));
+  if (room.user1 == userId) {
+    userPoints = room.result1;
+    rivalPoints = room.result2;
+    if (room.user2 == undefined) {
+      roomList.delete(parseInt(roomId))
     }
-    else if(roomList[i].user2 == userId) {
-      userPoints = roomList[i].result2;
-      rivalPoints = roomList[i].result1;
-      if (roomList[i].user1 == undefined) {
-        roomList = roomList.splice(i,1);
-      }
-      else {
-        roomList[i].user2 = undefined
-      }
+    else {
+      room.user1 = undefined
     }
   }
-  printRoomList()
+  else if(room.user2 == userId) {
+    userPoints = room.result2;
+    rivalPoints = room.result1;
+    if (room.user1 == undefined) {
+      roomList.delete(parseInt(roomId))
+    }
+    else {
+      room.user2 = undefined
+    }
+  }
   res.json({'userPoints':userPoints, 'rivalPoints':rivalPoints});
 })
 
 function generatebienesSequence() {
   var bienes = [];
   for (let i = 0; i < 11; i = i+1) {
-    let tobienepo = {
+    let biene = {
       bieneId: i,
       delta: (i + 1)*5,
       position: 5,
@@ -158,16 +164,6 @@ function generatebienesSequence() {
     bienes.push(biene)
   }
   return bienes;
-}
-
-function printRoomList() {
-  console.log('roomList --> ')
-  for (let i = 0; i < roomList.length; i = i+1) {
-    console.log(roomList[i].user1 + ' ' + roomList[i].user2 + ' ' + roomList[i].tinicio + ' ' + roomList[i].result1 + ' ' + roomList[i].result2 + ' bienes -->')
-    for (let j = 0; j < roomList[i].bienes.length; j = j + 1) {
-      console.log(roomList[i].bienes[j].bieneId + ' ' + roomList[i].bienes[j].delta + ' ' + roomList[i].bienes[j].position + ' ' + roomList[i].bienes[j].clicked)
-    }
-  }
 }
 
 
