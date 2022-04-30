@@ -22,13 +22,13 @@ app.get('/game', (req, res) => {
       gameInfo = {
         isgameready: true,
         timestamp: roomList[i].tinicio,
-        topos: roomList[i].topos
+        bienes: roomList[i].bienes
       }
-      res.json({'isgameready':gameInfo.isgameready, 'timestamp': gameInfo.timestamp, 'topos': gameInfo.topos});
+      res.json({'isgameready':gameInfo.isgameready, 'timestamp': gameInfo.timestamp, 'bienes': gameInfo.bienes});
       return;
     }
   }
-  res.json({'isgameready': isgameready, 'timestamp': '', 'topos': ''});
+  res.json({'isgameready': isgameready, 'timestamp': '', 'bienes': ''});
 })
 
 app.post('/game', (req, res) => {
@@ -116,40 +116,54 @@ app.post('/biene', (req, res) => {
   
 })
 
-app.get('/result', (req, res) => {
+app.get('/game/state', (req, res) => {
   const userId = req.get("userId");
+  getGamePoints(userId,false,res);
+})
+
+function getGamePoints(userId,isGameEnded,res) {
+  
   let userPoints = 0;
   let rivalPoints = 0;
   for (i=0;i< roomList.length; i+=1) {
     if (roomList[i].user1 == userId) {
       userPoints = roomList[i].result1;
       rivalPoints = roomList[i].result2;
-      if (roomList[i].user2 == undefined) {
-        roomList = roomList.splice(i,1);
-      }
-      else {
-        roomList[i].user1 = undefined
+      if (isGameEnded) {
+        if (roomList[i].user2 == undefined) {
+          roomList = roomList.splice(i,1);
+        }
+        else {
+          roomList[i].user1 = undefined
+        }
       }
     }
     else if(roomList[i].user2 == userId) {
       userPoints = roomList[i].result2;
       rivalPoints = roomList[i].result1;
-      if (roomList[i].user1 == undefined) {
-        roomList = roomList.splice(i,1);
-      }
-      else {
-        roomList[i].user2 = undefined
+      if (isGameEnded) {
+        if (roomList[i].user1 == undefined) {
+          roomList = roomList.splice(i,1);
+        }
+        else {
+          roomList[i].user2 = undefined
+        }
       }
     }
   }
   printRoomList()
   res.json({'userPoints':userPoints, 'rivalPoints':rivalPoints});
+}
+
+app.get('/result', (req, res) => {
+  const userId = req.get("userId");
+  getGamePoints(userId,true,res);
 })
 
 function generatebienesSequence() {
   var bienes = [];
   for (let i = 0; i < 11; i = i+1) {
-    let tobienepo = {
+    let biene = {
       bieneId: i,
       delta: (i + 1)*5,
       position: 5,
