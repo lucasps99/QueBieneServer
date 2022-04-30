@@ -8,6 +8,17 @@ app.get('/', (req, res) => {
   res.send('Hello World!')
 })
 
+app.get('/game', (req, res) => {
+  isgameready = false
+  const userId = req.get("userId");
+  for(i=0;i< roomList.length(); i+=1) {
+    if(roomList.tinicio && (roomList.user == userId || roomList.user2 == userId)) {
+      isgameready = true
+    }
+  }
+  res.json({'isgameready':isgameready});
+})
+
 app.post('/game', (req, res) => {
   const userId = req.get("userId");
   if (userId == undefined) {
