@@ -132,6 +132,7 @@ app.get('/result', (req, res) => {
       }
     }
   }
+  printRoomList()
   res.json({'userPoints':userPoints, 'rivalPoints':rivalPoints});
 })
 
