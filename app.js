@@ -223,6 +223,18 @@ function generateRandomInt(min,max){
 }
 
 
+app.get('/clock', (req, res) => {
+  const start = req.get("start");
+  if (start == undefined) {
+    res.sendStatus(400);
+    return;
+  }
+  servertime = Date.now();
+  delta = servertime - parseInt(start);
+  res.json({'delta':delta});
+})
+
+
 app.listen(port, () => {
   console.log(`Que Biene Server listening on port: ${port}`)
 })
