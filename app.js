@@ -231,7 +231,7 @@ app.get('/clock', (req, res) => {
   }
   servertime = Date.now();
   delta = servertime - parseInt(start);
-  res.json({'delta':delta});
+  res.json({'timestamp': servertime, 'delta':delta});
 })
 
 
